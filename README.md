@@ -5,13 +5,11 @@ Your post states:
 As your image shows, the problem is that dragging over multiple cells with `MultiSelect` enabled is going to break that rule by selecting "multiple cells per column".
 ___
 
-In other words, we need to be able to preview when the cell selection is changing, and have some criteria for whether to allow the change to occur. The ideal place to do this is in `DataGridView.SetSelectedCallCore` and since this is a protected method that fires no event, it's necessary to make a lightweight extended class for `DataGridView`.
+In other words, we need to be able to preview when the cell selection is changing, and have some criteria for whether to allow the change to occur. The `DataGridView.SetSelectedCellCore` method is an ideal place to do this, and since this is protected and fires no event, it's necessary to make a lightweight extended class `DataGridViewEx : DataGridView`. 
 
-The main feature of `DataGridViewEx` is to be able to `SingleSelectInColumn(int columnIndex, int rowIndex)`. As you do in your code, this needs to happen `OnCellMouseDown`. But to fix your problem with the drag-select, we _also_ need to detect `OnCellMouseEnter`.
+The main feature of `DataGridViewEx` is to be able to `SingleSelectInColumn(int columnIndex, int rowIndex)`. Your code is correct that this needs to happen `OnCellMouseDown`. But to fix your problem with the drag-select, we _also_ need to call it `OnCellMouseEnter`.
 
-1. If the Mouse left button is down when the cell is entered, we know it's a drag-select.
-2. In this case, we allow selection changes _only_ in the column that the mouse is currently over.
-3. Then, using `BeginInvoke`, we post the `SingleSelectInColumn(int columnIndex, int rowIndex)` at the end of the message queue.
+Meanwhile, the overridden `SetSelectedCellCore` method inspects `_allowedColumn` and if it's set, disallows attempted changes to any other column.
 
 I used the minimal test code shown below to verify that this works as intended.
 
@@ -35,24 +33,30 @@ class DataGridViewEx : DataGridView
     }
     private void SingleSelectInColumn(int columnIndex, int rowIndex)
     {
-        _allowedColumn = columnIndex;
-        if (columnIndex >= 0 && rowIndex >= 0)
+        try
         {
-            var cellsInColumn = 
-                Rows
-                .OfType<DataGridViewRow>()
-                .Select(_ => _.Cells[columnIndex]); 
-
-            foreach (
-                var cell in
-                cellsInColumn )
+            _allowedColumn = columnIndex;
+            if (columnIndex >= 0 && rowIndex >= 0)
             {
-                var sbSelected = cell.RowIndex == rowIndex;
-                if(!Equals(cell.Selected, sbSelected))
+                var cellsInColumn = 
+                    Rows
+                    .OfType<DataGridViewRow>()
+                    .Select(_ => _.Cells[columnIndex]); 
+
+                foreach (
+                    var cell in
+                    cellsInColumn )
                 {
-                    cell.Selected = sbSelected;
+                    var sbSelected = cell.RowIndex == rowIndex;
+                    if(!Equals(cell.Selected, sbSelected))
+                    {
+                        cell.Selected = sbSelected;
+                    }
                 }
             }
+        }
+        finally
+        {
             _allowedColumn = null;
         }
     }
