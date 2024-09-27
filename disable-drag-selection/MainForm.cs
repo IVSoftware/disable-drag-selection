@@ -1,5 +1,3 @@
-
-using IVSoftware.Portable;
 using System.ComponentModel;
 
 namespace disable_drag_selection
@@ -45,6 +43,7 @@ namespace disable_drag_selection
         {
             if (columnIndex >= 0 && rowIndex >= 0)
             {
+                _allowedColumn = columnIndex;
                 var cellsInColumn = 
                     Rows
                     .OfType<DataGridViewRow>()
@@ -64,7 +63,6 @@ namespace disable_drag_selection
             base.OnCellMouseEnter(e);
             if (MouseButtons == MouseButtons.Left)
             {
-                _allowedColumn = e.ColumnIndex;
                 BeginInvoke(()=> SingleSelectInColumn(e.ColumnIndex, e.RowIndex ));
             }
             else _allowedColumn = null;
