@@ -10,7 +10,7 @@ In other words, we need to be able to preview when the cell selection is changin
 The main feature of `DataGridViewEx` is to be able to `SingleSelectInColumn(int columnIndex, int rowIndex)`. As you do in your code, this needs to happen `OnCellMouseDown`. But to fix your problem with the drag-select, we _also_ need to detect `OnCellMouseEnter`.
 
 1. If the Mouse left button is down when the cell is entered, we know it's a drag-select.
-2. In this case, we want to allow selection changes only in the column that the mouse is currently over.
+2. In this case, we allow selection changes _only_ in the column that the mouse is currently over.
 3. Then, using `BeginInvoke`, we post the `SingleSelectInColumn(int columnIndex, int rowIndex)` at the end of the message queue.
 
 I used the minimal test code shown below to verify that this works as intended.
@@ -79,6 +79,10 @@ ___
 
 #### Test Code
 
+This routine simply populates the `DataGridView` with some rows to test. Then, in a continuous motion, the drag select is tested to ensure that the "one cell per column" rule is respected.
+
+[![drag-select][1]][1]
+
 ```
 public partial class MainForm : Form
 {
@@ -110,3 +114,6 @@ public class Record
     public int col3 { get; set; }
 }
 ```
+
+
+  [1]: https://i.sstatic.net/Jpsy6332.png
