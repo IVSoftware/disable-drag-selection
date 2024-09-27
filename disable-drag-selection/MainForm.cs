@@ -112,13 +112,11 @@ namespace disable_drag_selection
         {
             if (AllowedColumn is int validColumnIndex)
             {
-                Debug.WriteLine($"{columnIndex} {rowIndex} Selected: {selected} Column {validColumnIndex} IsAllowed: {Equals(columnIndex, validColumnIndex)}");
                 if(!Equals(columnIndex, validColumnIndex))
                 {
                     return;
                 }
             }
-            Debug.WriteLine($"DEFAULT: {columnIndex} {rowIndex} Selected: {selected} Column {columnIndex} IsAllowed: {bool.TrueString}");
             base.SetSelectedCellCore(
                 columnIndex,
                 rowIndex,
