@@ -33,18 +33,30 @@ namespace disable_drag_selection
         public int col2 { get; internal set; }
         public int col3 { get; internal set; }
     }
+
     class DataGridViewEx : DataGridView
     {
+        protected override void OnCellMouseDown(DataGridViewCellMouseEventArgs e)
+        {
+            base.OnCellMouseDown(e);
+            // Disable multiple selection in column
+            foreach (
+                var cell in
+                SelectedCells
+                .OfType<DataGridViewCell>()
+                .Where(_ =>
+                _.RowIndex != e.RowIndex &&
+                _.ColumnIndex == e.ColumnIndex))
+            {
+                cell.Selected = false;
+            }
+        }
         protected override void SetSelectedCellCore(int columnIndex, int rowIndex, bool selected)
         {
-            bool disabledByOneCellPerColumnRule =
-                ModifierKeys == Keys.Control &&
-                SelectedCells.OfType<DataGridViewCell>().Any(_ => _.ColumnIndex == columnIndex);
-
             base.SetSelectedCellCore(
-                columnIndex, 
+                columnIndex,
                 rowIndex,
-                selected && !(disabledByOneCellPerColumnRule || _wdtMove.Running));
+                selected && !_wdtMove.Running);
         }
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -52,6 +64,6 @@ namespace disable_drag_selection
             base.OnMouseMove(e);
         }
         // <PackageReference Include="IVSoftware.Portable.WatchdogTimer" Version="1.2.1" />
-        WatchdogTimer _wdtMove = new WatchdogTimer{ Interval = TimeSpan.FromMilliseconds(250)};
+        WatchdogTimer _wdtMove = new WatchdogTimer { Interval = TimeSpan.FromMilliseconds(250) };
     }
 }
