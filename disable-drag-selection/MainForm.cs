@@ -29,9 +29,9 @@ namespace disable_drag_selection
             col1 = col2 = col3 = _debugCount ++;
         }
 
-        public int col1 { get; set; }
-        public int col2 { get; set; }
-        public int col3 { get; set; }
+        public int col1 { get; internal set; }
+        public int col2 { get; internal set; }
+        public int col3 { get; internal set; }
     }
     class DataGridViewEx : DataGridView
     {
