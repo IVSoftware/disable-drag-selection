@@ -52,24 +52,30 @@ namespace disable_drag_selection
         }
         private void SingleSelectInColumn(int columnIndex, int rowIndex)
         {
-            _allowedColumn = columnIndex;
-            if (columnIndex >= 0 && rowIndex >= 0)
+            try
             {
-                var cellsInColumn = 
-                    Rows
-                    .OfType<DataGridViewRow>()
-                    .Select(_ => _.Cells[columnIndex]); 
-
-                foreach (
-                    var cell in
-                    cellsInColumn )
+                _allowedColumn = columnIndex;
+                if (columnIndex >= 0 && rowIndex >= 0)
                 {
-                    var sbSelected = cell.RowIndex == rowIndex;
-                    if(!Equals(cell.Selected, sbSelected))
+                    var cellsInColumn = 
+                        Rows
+                        .OfType<DataGridViewRow>()
+                        .Select(_ => _.Cells[columnIndex]); 
+
+                    foreach (
+                        var cell in
+                        cellsInColumn )
                     {
-                        cell.Selected = sbSelected;
+                        var sbSelected = cell.RowIndex == rowIndex;
+                        if(!Equals(cell.Selected, sbSelected))
+                        {
+                            cell.Selected = sbSelected;
+                        }
                     }
                 }
+            }
+            finally
+            {
                 _allowedColumn = null;
             }
         }
