@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace disable_drag_selection
 {
@@ -36,14 +37,22 @@ namespace disable_drag_selection
     {
         protected override void OnCellMouseDown(DataGridViewCellMouseEventArgs e)
         {
-            base.OnCellMouseDown(e);
-            SingleSelectInColumn(e.ColumnIndex, e.RowIndex);
+            var cellToggle = 
+                e.ColumnIndex >= 0 && e.RowIndex >= 0 ?
+                this[e.ColumnIndex, e.RowIndex] : null;
+            if (ModifierKeys == Keys.Control && cellToggle?.Selected == true)
+            {
+                cellToggle.Selected = false;
+            }
+            else
+            {
+                BeginInvoke(() => SingleSelectInColumn(e.ColumnIndex, e.RowIndex));
+            }
         }
         private void SingleSelectInColumn(int columnIndex, int rowIndex)
         {
             if (columnIndex >= 0 && rowIndex >= 0)
             {
-                _allowedColumn = columnIndex;
                 var cellsInColumn = 
                     Rows
                     .OfType<DataGridViewRow>()
@@ -53,26 +62,63 @@ namespace disable_drag_selection
                     var cell in
                     cellsInColumn )
                 {
-                    cell.Selected = cell.RowIndex == rowIndex;
+                    var sbSelected = cell.RowIndex == rowIndex;
+                    if(!Equals(cell.Selected, sbSelected))
+                    {
+                        cell.Selected = sbSelected;
+                    }
+                }
+                AllowedColumn = null;
+            }
+        }
+        public int? AllowedColumn
+        {
+            get => _allowedColumn;
+            set
+            {
+                if (!Equals(_allowedColumn, value))
+                {
+                    _allowedColumn = value;
                 }
             }
         }
+
         int? _allowedColumn = null;
         protected override void OnCellMouseEnter(DataGridViewCellEventArgs e)
         {
             base.OnCellMouseEnter(e);
             if (MouseButtons == MouseButtons.Left)
             {
+                AllowedColumn = e.ColumnIndex;
                 BeginInvoke(()=> SingleSelectInColumn(e.ColumnIndex, e.RowIndex ));
             }
-            else _allowedColumn = null;
+        }
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+            // CRITICAL - We have to put this back the way we found it!
+            AllowedColumn = null;
+        }
+        protected override void OnCellMouseLeave(DataGridViewCellEventArgs e)
+        {
+            base.OnCellMouseLeave(e);
+            if (MouseButtons == MouseButtons.Left)
+            {
+                // CRITICAL - For example if the mouse is dragged outside the control.
+                AllowedColumn = int.MinValue;
+            }
         }
         protected override void SetSelectedCellCore(int columnIndex, int rowIndex, bool selected)
         {
-            if (_allowedColumn is int notNull && columnIndex != notNull)
+            if (AllowedColumn is int validColumnIndex)
             {
-                return;
+                Debug.WriteLine($"{columnIndex} {rowIndex} Selected: {selected} Column {validColumnIndex} IsAllowed: {Equals(columnIndex, validColumnIndex)}");
+                if(!Equals(columnIndex, validColumnIndex))
+                {
+                    return;
+                }
             }
+            Debug.WriteLine($"DEFAULT: {columnIndex} {rowIndex} Selected: {selected} Column {columnIndex} IsAllowed: {bool.TrueString}");
             base.SetSelectedCellCore(
                 columnIndex,
                 rowIndex,
