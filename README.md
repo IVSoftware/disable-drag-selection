@@ -52,28 +52,16 @@ class DataGridViewEx : DataGridView
                     cell.Selected = sbSelected;
                 }
             }
-            AllowedColumn = null;
+            _allowedColumn = null;
         }
     }
-    public int? AllowedColumn
-    {
-        get => _allowedColumn;
-        set
-        {
-            if (!Equals(_allowedColumn, value))
-            {
-                _allowedColumn = value;
-            }
-        }
-    }
-
-    int? _allowedColumn = null;
+    public int? _allowedColumn = null;
     protected override void OnCellMouseEnter(DataGridViewCellEventArgs e)
     {
         base.OnCellMouseEnter(e);
         if (MouseButtons == MouseButtons.Left)
         {
-            AllowedColumn = e.ColumnIndex;
+            _allowedColumn = e.ColumnIndex;
             BeginInvoke(()=> SingleSelectInColumn(e.ColumnIndex, e.RowIndex ));
         }
     }
@@ -81,7 +69,7 @@ class DataGridViewEx : DataGridView
     {
         base.OnMouseUp(e);
         // CRITICAL - We have to put this back the way we found it!
-        AllowedColumn = null;
+        _allowedColumn = null;
     }
     protected override void OnCellMouseLeave(DataGridViewCellEventArgs e)
     {
@@ -89,12 +77,12 @@ class DataGridViewEx : DataGridView
         if (MouseButtons == MouseButtons.Left)
         {
             // CRITICAL - For example if the mouse is dragged outside the control.
-            AllowedColumn = int.MinValue;
+            _allowedColumn = int.MinValue;
         }
     }
     protected override void SetSelectedCellCore(int columnIndex, int rowIndex, bool selected)
     {
-        if (AllowedColumn is int validColumnIndex)
+        if (_allowedColumn is int validColumnIndex)
         {
             if(!Equals(columnIndex, validColumnIndex))
             {
