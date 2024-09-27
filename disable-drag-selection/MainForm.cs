@@ -52,6 +52,7 @@ namespace disable_drag_selection
         }
         private void SingleSelectInColumn(int columnIndex, int rowIndex)
         {
+            _allowedColumn = columnIndex;
             if (columnIndex >= 0 && rowIndex >= 0)
             {
                 var cellsInColumn = 
@@ -78,7 +79,6 @@ namespace disable_drag_selection
             base.OnCellMouseEnter(e);
             if (MouseButtons == MouseButtons.Left)
             {
-                _allowedColumn = e.ColumnIndex;
                 BeginInvoke(()=> SingleSelectInColumn(e.ColumnIndex, e.RowIndex ));
             }
         }

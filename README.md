@@ -35,6 +35,7 @@ class DataGridViewEx : DataGridView
     }
     private void SingleSelectInColumn(int columnIndex, int rowIndex)
     {
+        _allowedColumn = columnIndex;
         if (columnIndex >= 0 && rowIndex >= 0)
         {
             var cellsInColumn = 
@@ -61,7 +62,6 @@ class DataGridViewEx : DataGridView
         base.OnCellMouseEnter(e);
         if (MouseButtons == MouseButtons.Left)
         {
-            _allowedColumn = e.ColumnIndex;
             BeginInvoke(()=> SingleSelectInColumn(e.ColumnIndex, e.RowIndex ));
         }
     }
