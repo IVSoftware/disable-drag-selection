@@ -39,24 +39,46 @@ namespace disable_drag_selection
         protected override void OnCellMouseDown(DataGridViewCellMouseEventArgs e)
         {
             base.OnCellMouseDown(e);
-            // Disable multiple selection in column
-            foreach (
-                var cell in
-                SelectedCells
-                .OfType<DataGridViewCell>()
-                .Where(_ =>
-                _.RowIndex != e.RowIndex &&
-                _.ColumnIndex == e.ColumnIndex))
+            SingleSelectInColumn(e.ColumnIndex, e.RowIndex);
+        }
+        private void SingleSelectInColumn(int columnIndex, int rowIndex)
+        {
+            if (columnIndex >= 0 && rowIndex >= 0)
             {
-                cell.Selected = false;
+                var cellsInColumn = 
+                    Rows
+                    .OfType<DataGridViewRow>()
+                    .Select(_ => _.Cells[columnIndex]); 
+
+                foreach (
+                    var cell in
+                    cellsInColumn )
+                {
+                    cell.Selected = cell.RowIndex == rowIndex;
+                }
             }
+        }
+        int? _allowedColumn = null;
+        protected override void OnCellMouseEnter(DataGridViewCellEventArgs e)
+        {
+            base.OnCellMouseEnter(e);
+            if (MouseButtons == MouseButtons.Left)
+            {
+                _allowedColumn = e.ColumnIndex;
+                BeginInvoke(()=> SingleSelectInColumn(e.ColumnIndex, e.RowIndex ));
+            }
+            else _allowedColumn = null;
         }
         protected override void SetSelectedCellCore(int columnIndex, int rowIndex, bool selected)
         {
+            if (_wdtMove.Running && columnIndex != _allowedColumn)
+            {
+                return;
+            }
             base.SetSelectedCellCore(
                 columnIndex,
                 rowIndex,
-                selected && !_wdtMove.Running);
+                selected);
         }
         protected override void OnMouseMove(MouseEventArgs e)
         {
