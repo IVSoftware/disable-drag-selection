@@ -48,6 +48,7 @@ namespace disable_drag_selection
             {
                 BeginInvoke(() => SingleSelectInColumn(e.ColumnIndex, e.RowIndex));
             }
+            // CRITICAL - Do 'not' call base class method!
         }
         private void SingleSelectInColumn(int columnIndex, int rowIndex)
         {
