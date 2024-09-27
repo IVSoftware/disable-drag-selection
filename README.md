@@ -4,21 +4,65 @@ Your post states:
 
 As your image shows, the problem is that dragging over multiple cells with `MultiSelect` enabled is going to break that rule by selecting "multiple cells per column".
 ___
-The general approach you've taken in your code is to deselect after the fact. It might be even better to prevent the cells that would break the rule from being selected in the first place, and it's straightforward to do this by making a lightweight extended class for `DataGridView`, and then detecting mouse drag and disabling cell selection for a brief interval after detection. I used the minimal test code shown below to verify that this works as intended.
+
+In other words, we need to be able to preview when the cell selection is changing, and have some criteria for whether to allow the change to occur. The ideal place to do this is in `DataGridView.SetSelectedCallCore` and since this is a protected method that fires no event, it's necessary to make a lightweight extended class for `DataGridView`.
+
+The next thing is to detect the drag-select condition, defined as "mouse _moves_ while mouse is _down_", and restart a watchdog timer for a brief interval that tells us that the DGV is in that state.
+
+The main feature of `DataGridViewEx` is to be able to `SingleSelectInColumn(int columnIndex, int rowIndex)`. As you do in your code, this needs to happen `OnCellMouseDown`. But to fix your problem with the drag-select, we _also_ need to detect `OnCellMouseEnter`. Of and _only_ allow selection if:
+
+1. Mouse left button is down.
+2. The selection is occurring in the same column that the mouse is currently over. 
+
+
+I used the minimal test code shown below to verify that this works as intended.
 
 ```
 class DataGridViewEx : DataGridView
 {
+    protected override void OnCellMouseDown(DataGridViewCellMouseEventArgs e)
+    {
+        base.OnCellMouseDown(e);
+        SingleSelectInColumn(e.ColumnIndex, e.RowIndex);
+    }
+    private void SingleSelectInColumn(int columnIndex, int rowIndex)
+    {
+        if (columnIndex >= 0 && rowIndex >= 0)
+        {
+            var cellsInColumn = 
+                Rows
+                .OfType<DataGridViewRow>()
+                .Select(_ => _.Cells[columnIndex]); 
+
+            foreach (
+                var cell in
+                cellsInColumn )
+            {
+                cell.Selected = cell.RowIndex == rowIndex;
+            }
+        }
+    }
+    int? _allowedColumn = null;
+    protected override void OnCellMouseEnter(DataGridViewCellEventArgs e)
+    {
+        base.OnCellMouseEnter(e);
+        if (MouseButtons == MouseButtons.Left)
+        {
+            _allowedColumn = e.ColumnIndex;
+            BeginInvoke(()=> SingleSelectInColumn(e.ColumnIndex, e.RowIndex ));
+        }
+        else _allowedColumn = null;
+    }
     protected override void SetSelectedCellCore(int columnIndex, int rowIndex, bool selected)
     {
-        bool disabledByOneCellPerColumnRule =
-            ModifierKeys == Keys.Control &&
-            SelectedCells.OfType<DataGridViewCell>().Any(_ => _.ColumnIndex == columnIndex);
-
+        if (_wdtMove.Running && columnIndex != _allowedColumn)
+        {
+            return;
+        }
         base.SetSelectedCellCore(
-            columnIndex, 
+            columnIndex,
             rowIndex,
-            selected && !(disabledByOneCellPerColumnRule || _wdtMove.Running));
+            selected);
     }
     protected override void OnMouseMove(MouseEventArgs e)
     {
@@ -26,7 +70,7 @@ class DataGridViewEx : DataGridView
         base.OnMouseMove(e);
     }
     // <PackageReference Include="IVSoftware.Portable.WatchdogTimer" Version="1.2.1" />
-    WatchdogTimer _wdtMove = new WatchdogTimer{ Interval = TimeSpan.FromMilliseconds(250)};
+    WatchdogTimer _wdtMove = new WatchdogTimer { Interval = TimeSpan.FromMilliseconds(250) };
 }
 ```
 

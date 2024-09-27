@@ -71,7 +71,7 @@ namespace disable_drag_selection
         }
         protected override void SetSelectedCellCore(int columnIndex, int rowIndex, bool selected)
         {
-            if (_wdtMove.Running && columnIndex != _allowedColumn)
+            if (_allowedColumn is int notNull && columnIndex != notNull)
             {
                 return;
             }
@@ -80,12 +80,5 @@ namespace disable_drag_selection
                 rowIndex,
                 selected);
         }
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            if (MouseButtons == MouseButtons.Left) _wdtMove.StartOrRestart();
-            base.OnMouseMove(e);
-        }
-        // <PackageReference Include="IVSoftware.Portable.WatchdogTimer" Version="1.2.1" />
-        WatchdogTimer _wdtMove = new WatchdogTimer { Interval = TimeSpan.FromMilliseconds(250) };
     }
 }
